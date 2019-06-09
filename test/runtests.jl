@@ -2,6 +2,10 @@
 
 using LKJ
 using Test
+
+import Pkg
+Pkg.add("ForwardDiff")
+
 using ForwardDiff
 using LinearAlgebra
 
