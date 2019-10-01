@@ -1,6 +1,7 @@
 name = "LKJ"
 authors = "Matthias Brueckner <matthias.brueckner@posteo.de>"
 uuid = "7af7824e-2e1f-5549-925c-2b66e3df8e9f"
+version = "0.0.1"
 
 [deps]
 ArgCheck = "dce04be8-c92d-5529-be00-80e4d2c0e197"
