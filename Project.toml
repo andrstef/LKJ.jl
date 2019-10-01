@@ -1,9 +1,10 @@
 name = "LKJ"
-authors = "Matthias Brueckner <matthias.brueckner@posteo.de>"
 uuid = "7af7824e-2e1f-5549-925c-2b66e3df8e9f"
+authors = "Matthias Brueckner <matthias.brueckner@posteo.de>"
 version = "0.0.1"
 
 [deps]
 ArgCheck = "dce04be8-c92d-5529-be00-80e4d2c0e197"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"
