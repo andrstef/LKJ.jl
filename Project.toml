@@ -1,0 +1,8 @@
+name = "LKJ"
+authors = "Matthias Brueckner <matthias.brueckner@posteo.de>"
+uuid = "69e045d7-6ab8-5f11-a7ac-866f3ffc555d"
+
+[deps]
+ArgCheck = "dce04be8-c92d-5529-be00-80e4d2c0e197"
+Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"
