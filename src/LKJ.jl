@@ -50,7 +50,7 @@ function rand(distr::Union{LKJcorr, LKJcorrChol}, n::Int)
     res = Vector{Matrix{Float64}}(undef, n)
     
     for i in 1:n
-        res[i] = _rand(distr.d, distr.eta)
+        res[i] = rand(distr)
     end
 
     res
