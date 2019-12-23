@@ -1,7 +1,7 @@
 module LKJ
 
 """
-A Julia package implementing the Lewandowski, Kurowicka and Joe (LKJ) probability distribution on the space of correlation matrices. 
+A Julia package implementing the Lewandowski, Kurowicka and Joe (LKJ) probability distribution on the space of correlation matrices.
 The probability density function of a d-dimensional LKJ-distribution (''d \\geq 2'') with parameter ''\\boldsymbol{\\eta} \\geq 1'' is:
 ```math
 f(\\mathbf{A}; \\boldsymbol{\\eta}) = c_d |det(A)|^{\\eta-1}
@@ -15,11 +15,11 @@ using SpecialFunctions: lgamma
 using LinearAlgebra
 using ArgCheck
 
-import Base: length
+import Base: length, size
 import Distributions: rand, logpdf, params
 
 export LKJcorr, LKJcorrChol
-export length, params, rand, logpdf, transform_free_to_chol, transform_chol_to_free, log_jacobian_det_free_to_chol
+export length, size, params, rand, logpdf, transform_free_to_chol, transform_chol_to_free, log_jacobian_det_free_to_chol
 
 ## LKJ distribution for correlation matrices
 struct LKJcorr <: ContinuousMatrixDistribution
@@ -27,7 +27,7 @@ struct LKJcorr <: ContinuousMatrixDistribution
     eta::Float64
 
     function LKJcorr(d::Int, eta::Float64)
-        @argcheck (d >= 2) & (eta >= 1)            
+        @argcheck (d >= 2) & (eta >= 1)
         new(d, eta)
     end
 end
@@ -38,33 +38,58 @@ struct LKJcorrChol <: ContinuousMatrixDistribution
     eta::Float64
 
     function LKJcorrChol(d::Int, eta::Float64)
-        @argcheck (d >= 2) & (eta >= 1)           
+        @argcheck (d >= 2) & (eta >= 1)
         new(d, eta)
     end
 end
 
 params(distr::Union{LKJcorr, LKJcorrChol}) = (distr.d, distr.eta)
 length(distr::Union{LKJcorr, LKJcorrChol}) = distr.d
+size(distr::Union{LKJcorr, LKJcorrChol}) = (distr.d, distr.d)
 
 function rand(distr::Union{LKJcorr, LKJcorrChol}, n::Int)
-    res = Vector{Matrix{Float64}}(undef, n)
-    
-    for i in 1:n
-        res[i] = rand(distr)
+    res=[rand(distr)]
+    for i in 2:n
+        push!(res,rand(distr))
     end
-
     res
 end
 
 rand(distr::LKJcorr) = _rand(distr.d, distr.eta)
 rand(distr::LKJcorrChol) = cholesky!(_rand(distr.d, distr.eta)).L
 
+# function _rand(d::Int, eta::Float64)
+#     beta = eta + (d-2)/2
+#     u = rand(Beta(beta, beta), 1)[1]
+#
+#     stdn = Normal(0, 1)
+#
+#     R = ones(Float64, d, d)
+#     R[1,2] = 2*u - 1
+#     R[2,1] = R[1,2]
+#
+#     for k in 2:(d-1)
+#         beta -= 0.5
+#
+#         ## sample point uniformly from (k-1)-sphere
+#         u = rand(stdn, k)
+#         u ./= sqrt(sum(u.^2))
+#
+#         w = sqrt(rand(Beta(k/2, beta), 1)[1]) .* u
+#         z = cholesky(R[1:k, 1:k]).U' * w
+#
+#         R[1:k, k+1] = z
+#         R[k+1, 1:k] = z'
+#     end
+#     R
+# end
+
 function _rand(d::Int, eta::Float64)
     beta = eta + (d-2)/2
-    u = rand(Beta(beta, beta), 1)[1]
+    u = rand(Beta(beta, beta))
 
     stdn = Normal(0, 1)
-    
+
     R = ones(Float64, d, d)
     R[1,2] = 2*u - 1
     R[2,1] = R[1,2]
@@ -76,13 +101,13 @@ function _rand(d::Int, eta::Float64)
         u = rand(stdn, k)
         u ./= sqrt(sum(u.^2))
 
-        w = sqrt(rand(Beta(k/2, beta), 1)[1]) .* u
-        z = cholesky(R[1:k, 1:k]).U' * w
+        w = sqrt(rand(Beta(k/2, beta))) .* u
+        z = cholesky(@view R[1:k, 1:k]).L * w
 
-        R[1:k, k+1] = z
-        R[k+1, 1:k] = z'        
+        R[1:k, k+1] .= z
+        R[k+1, 1:k] .= z
     end
-    R
+    Hermitian(R)
 end
 
 function logpdf(distr::LKJcorr, x::AbstractMatrix{T}; norm=false) where T
@@ -93,7 +118,7 @@ function logpdf(distr::LKJcorr, x::AbstractMatrix{T}; norm=false) where T
     end
 
     c = norm ? log_normalizing_const(distr.d, distr.eta) : 0
-    
+
     (distr.eta - 1)*log(det(x)) + c
 end
 
@@ -109,29 +134,29 @@ function logpdf(distr::LKJcorrChol, x::LowerTriangular; norm=false)
     end
 
     c = norm ? log_normalizing_const(distr.d, distr.eta) : 0
-    
+
     sum((distr.d .- (1:distr.d) .+ 2*distr.eta .- 2).*log.(diag(x))) + c
 end
 
 function log_normalizing_const(d::Int, eta::T) where T <: Real
-    c = zero(T) 
-    
+    c = zero(T)
+
     if eta == one(T)
         for k in 1:floor(Int, (d-1)/2)
             c += lgamma(2*k)
         end
-        
+
         if iseven(d)
-            c += d*(d-2)/4 * log(pi) + (3*d^2 - 4*d) / 4*log(2) + d*lgamma(d/2) - (d-1)*lgamma(d) 
+            c += d*(d-2)/4 * log(pi) + (3*d^2 - 4*d) / 4*log(2) + d*lgamma(d/2) - (d-1)*lgamma(d)
         else
             c += (d^2 - 1)/4 * log(pi) - (d-1)^2 / 4*log(2) - (d-1)*lgamma((d+1)/2)
-        end            
+        end
     else
         c = (2*eta + d - 3)*log(2) + 2*lgamma(eta + d/2 - 1) - lgamma(2*eta + d - 2) - (d-2)*lgamma(eta + (d-1)/2)
 
         for k in 2:(d-1)
-            c += k/2 * log(pi) + lgamma(eta + (d-1-k)/2)            
-        end        
+            c += k/2 * log(pi) + lgamma(eta + (d-1-k)/2)
+        end
     end
     c
 end
@@ -141,7 +166,7 @@ end
 ## y = vector of unconstrained values
 function transform_free_to_chol(y::AbstractVector{T}, K) where T
     z = tanh.(y)
-    w = zeros(T, K, K)   
+    w = zeros(T, K, K)
     w[1,1] = 1.0
 
     k = 1
@@ -172,7 +197,7 @@ end
 ## see https://github.com/stan-dev/math/blob/develop/stan/math/prim/mat/fun/cholesky_corr_free.hpp
 ## w = Cholesky factor of correlation matrix
 function transform_chol_to_free(w::LowerTriangular)
-    K = size(w,1)  
+    K = size(w,1)
     y = zeros(eltype(w), Int(K*(K-1)/2))
 
     k = 1
@@ -180,7 +205,7 @@ function transform_chol_to_free(w::LowerTriangular)
         y[k] = atanh(w[i,1])
         k += 1
         sum_sqs = w[i,1]^2
-        
+
         for j in 2:(i-1)
             y[k] = atanh(w[i,j] / sqrt(1.0 - sum_sqs))
             k += 1
