@@ -110,7 +110,13 @@ function _rand(d::Int, eta::Float64)
     Hermitian(R)
 end
 
-function logpdf(distr::LKJcorr, x::AbstractMatrix{T}; norm=false) where T
+function iscorr(A::AbstractMatrix{T}) where T<:Real
+    any(diag(A).==one(T)) && isposdef(A)
+end
+
+function logpdf(distr::LKJcorr, x::AbstractMatrix{T}; norm=false) where T<:Real
+    !(iscorr(x)) && return -T(Inf)
+
     n, m = size(x)
 
     if n != distr.d
@@ -123,6 +129,8 @@ function logpdf(distr::LKJcorr, x::AbstractMatrix{T}; norm=false) where T
 end
 
 function logpdf(distr::LKJcorrChol, x::LowerTriangular; norm=false)
+    !(iscorr(x*x')) && return -Inf
+
     n, m = size(x)
 
     if n != m
