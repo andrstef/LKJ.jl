@@ -111,7 +111,7 @@ function _rand(d::Int, eta::Float64)
 end
 
 function iscorr(A::AbstractMatrix{T}) where T<:Real
-    any(diag(A).==one(T)) && isposdef(A)
+    all(diag(A).==one(T)) && isposdef(A)
 end
 
 function logpdf(distr::LKJcorr, x::AbstractMatrix{T}; norm=false) where T<:Real
