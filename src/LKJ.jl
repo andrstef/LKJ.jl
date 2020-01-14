@@ -20,6 +20,7 @@ import Distributions: rand, logpdf, params
 
 export LKJcorr, LKJcorrChol
 export length, size, params, rand, logpdf, transform_free_to_chol, transform_chol_to_free, log_jacobian_det_free_to_chol
+export link, invlink
 
 ## LKJ distribution for correlation matrices
 struct LKJcorr <: ContinuousMatrixDistribution
@@ -44,7 +45,7 @@ struct LKJcorrChol <: ContinuousMatrixDistribution
 end
 
 params(distr::Union{LKJcorr, LKJcorrChol}) = (distr.d, distr.eta)
-length(distr::Union{LKJcorr, LKJcorrChol}) = distr.d
+length(distr::Union{LKJcorr, LKJcorrChol}) = distr.d * distr.d
 size(distr::Union{LKJcorr, LKJcorrChol}) = (distr.d, distr.d)
 
 function rand(distr::Union{LKJcorr, LKJcorrChol}, n::Int)
@@ -202,6 +203,8 @@ function transform_free_to_chol(y::AbstractVector{T}, K) where T
     LowerTriangular(w)
 end
 
+invlink(distr::LKJcorrChol,y::AbstractArray)=transform_free_to_chol(y, size(y,1))
+
 ## see https://github.com/stan-dev/math/blob/develop/stan/math/prim/mat/fun/cholesky_corr_free.hpp
 ## w = Cholesky factor of correlation matrix
 function transform_chol_to_free(w::LowerTriangular)
@@ -222,6 +225,9 @@ function transform_chol_to_free(w::LowerTriangular)
     end
     y
 end
+
+link(distr::LKJcorrChol,x::AbstractArray)=transform_chol_to_free(LowerTriangular(x))
+
 
 ## K = (1 + sqrt(1 + 8*length(y))) / 2
 
