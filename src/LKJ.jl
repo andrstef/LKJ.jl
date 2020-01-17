@@ -203,7 +203,12 @@ function transform_free_to_chol(y::AbstractVector{T}, K) where T
     LowerTriangular(w)
 end
 
-invlink(distr::LKJcorrChol,y::AbstractArray)=transform_free_to_chol(y, size(y,1))
+function invlink(distr::LKJcorrChol,y::AbstractArray)
+    K=distr.d
+    k_choose_2=K * (K-1) / 2
+    length(y) != k_choose_2 && throw("distribution size is not compatible with vector size")
+    transform_free_to_chol(y, K)
+end
 
 ## see https://github.com/stan-dev/math/blob/develop/stan/math/prim/mat/fun/cholesky_corr_free.hpp
 ## w = Cholesky factor of correlation matrix
